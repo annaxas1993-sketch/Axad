@@ -175,7 +175,7 @@ class MainActivity : ComponentActivity() {
                                             runOnUiThread {
                                                 exporting = false
                                                 status = "Պատրաստ է՝ ${file.absolutePath}"
-                                                Toast.makeText(this, "Տեսանյութը պահպանվեց հավելվածի Movies պանակում", Toast.LENGTH_LONG).show()
+                                                Toast.makeText(this@MainActivity, "Տեսանյութը պահպանվեց հավելվածի Movies պանակում", Toast.LENGTH_LONG).show()
                                             }
                                         } catch (e: Exception) {
                                             runOnUiThread {
