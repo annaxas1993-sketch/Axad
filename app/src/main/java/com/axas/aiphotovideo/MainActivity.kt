@@ -186,7 +186,7 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                             }, enabled = !exporting, modifier = Modifier.fillMaxWidth().height(56.dp)) {
-                                Text(if (exporting) "Ստեղծվում է…" else "▶  Ստեղծել 5 վայրկյանանոց MP4")
+                                Text(if (exporting) "Ստեղծվում է…" else "▶  Ստեղծել 15 վայրկյանանոց MP4")
                             }
                             Spacer(Modifier.height(12.dp))
                             Text(status, color = ComposeColor(0xFFB9B5C9), fontSize = 12.sp)
@@ -225,7 +225,7 @@ class MainActivity : ComponentActivity() {
             }
             val scaled = Bitmap.createScaledBitmap(source, width, height, true)
             val start = System.currentTimeMillis()
-            while (System.currentTimeMillis() - start < 5000) {
+            while (System.currentTimeMillis() - start < 15000) {
                 val canvas: Canvas = surface.lockCanvas(null)
                 try {
                     canvas.drawBitmap(scaled, 0f, 0f, paint)
