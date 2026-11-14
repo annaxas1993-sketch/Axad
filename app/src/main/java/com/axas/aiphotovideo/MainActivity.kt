@@ -45,7 +45,11 @@ class MainActivity : ComponentActivity() {
         var photoBitmap by remember { mutableStateOf<Bitmap?>(null) }
         var caption by remember { mutableStateOf("") }
         var prompt by remember { mutableStateOf("") }
-        var apiKey by remember { mutableStateOf("") }
+        var apiKey by remember { mutableStateOf(getSharedPreferences("anna_ai_settings", MODE_PRIVATE).getString("pollinations_api_key", "") ?: "") }
+        LaunchedEffect(apiKey) {
+            getSharedPreferences("anna_ai_settings", MODE_PRIVATE).edit()
+                .putString("pollinations_api_key", apiKey.trim()).apply()
+        }
         var generatedBitmap by remember { mutableStateOf<Bitmap?>(null) }
         var aiBusy by remember { mutableStateOf(false) }
         var exporting by remember { mutableStateOf(false) }
