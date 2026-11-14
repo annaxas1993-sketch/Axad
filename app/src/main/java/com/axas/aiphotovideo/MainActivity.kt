@@ -44,7 +44,10 @@ class MainActivity : ComponentActivity() {
         var page by remember { mutableStateOf("home") }
         var photoBitmap by remember { mutableStateOf<Bitmap?>(null) }
         var caption by remember { mutableStateOf("") }
-        var prompt by remember { mutableStateOf("") }\n        var apiKey by remember { mutableStateOf("") }\n        var generatedBitmap by remember { mutableStateOf<Bitmap?>(null) }\n        var aiBusy by remember { mutableStateOf(false) }
+        var prompt by remember { mutableStateOf("") }
+        var apiKey by remember { mutableStateOf("") }
+        var generatedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+        var aiBusy by remember { mutableStateOf(false) }
         var exporting by remember { mutableStateOf(false) }
         var status by remember { mutableStateOf("Ընտրիր նկար և ավելացրու քո տեքստը") }
 
@@ -106,6 +109,8 @@ class MainActivity : ComponentActivity() {
                         if (page == "image") {
                             Spacer(Modifier.height(25.dp))
                             Text("Նկար ստեղծել", fontSize = 23.sp, fontWeight = FontWeight.Bold, color = ComposeColor.White)
+                            Spacer(Modifier.height(12.dp))
+                            OutlinedTextField(value = apiKey, onValueChange = { apiKey = it }, label = { Text("Pollinations API key (sk_...)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
                             Spacer(Modifier.height(18.dp))
                             OutlinedTextField(
                                 value = prompt, onValueChange = { prompt = it },
@@ -124,18 +129,30 @@ class MainActivity : ComponentActivity() {
                             Spacer(Modifier.height(16.dp))
                             Button(
                                 onClick = {
-                                    Toast.makeText(this@MainActivity,
-                                        "AI նկարի ստեղծման ծառայությունը դեռ միացված չէ",
-                                        Toast.LENGTH_LONG).show()
+                                    if (prompt.isBlank() || !apiKey.startsWith("sk_")) {
+                                        Toast.makeText(this@MainActivity, "Լրացրու նկարագրությունը և ճիշտ sk_ API key-ը", Toast.LENGTH_LONG).show()
+                                    } else if (!aiBusy) {
+                                        aiBusy = true
+                                        thread {
+                                            try {
+                                                val result = PollinationsApi.generateImage(prompt, apiKey)
+                                                runOnUiThread { generatedBitmap = result; aiBusy = false; status = "AI նկարը պատրաստ է" }
+                                            } catch (e: Exception) {
+                                                runOnUiThread { aiBusy = false; status = "Սխալ՝ ${e.message}" }
+                                            }
+                                        }
+                                    }
                                 },
-                                modifier = Modifier.fillMaxWidth().height(56.dp)
-                            ) { Text("Ստեղծել AI նկար") }
+                                enabled = !aiBusy, modifier = Modifier.fillMaxWidth().height(56.dp)
+                            ) { Text(if (aiBusy) "Ստեղծվում է…" else "Ստեղծել AI նկար") }
                             Spacer(Modifier.height(12.dp))
-                            Text("AI նկար ստեղծելու համար դեռ պետք է միացնել արտաքին AI ծառայություն։",
+                            Text("Օգտագործվում է Pollinations AI։ API key-ը մնում է միայն այս բացված հավելվածի հիշողության մեջ։ Գեներացումը կարող է ծախսել քո հաշվի Pollen միավորները.",
                                 color = ComposeColor(0xFFB9B5C9), fontSize = 13.sp)
                         } else {
                             Spacer(Modifier.height(12.dp))
                             Text("Նկարից վիդեո", fontSize = 23.sp, fontWeight = FontWeight.Bold, color = ComposeColor.White)
+                            Spacer(Modifier.height(10.dp))
+                            OutlinedTextField(value = apiKey, onValueChange = { apiKey = it }, label = { Text("Pollinations API key (sk_...)") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
                             Spacer(Modifier.height(16.dp))
                             Box(
                                 Modifier.fillMaxWidth().height(350.dp)
@@ -158,6 +175,23 @@ class MainActivity : ComponentActivity() {
                             Button(onClick = { picker.launch("image/*") }, modifier = Modifier.fillMaxWidth()) {
                                 Text("＋  Ընտրել նկար հեռախոսից")
                             }
+                            Spacer(Modifier.height(12.dp))
+                            Button(onClick = {
+                                val source = photoBitmap
+                                if (source == null || !apiKey.startsWith("sk_")) {
+                                    Toast.makeText(this@MainActivity, "Ընտրիր նկար և լրացրու sk_ API key-ը", Toast.LENGTH_LONG).show()
+                                } else if (!aiBusy) {
+                                    aiBusy = true
+                                    status = "AI-ն կենդանացնում է նկարը. սպասիր…"
+                                    thread {
+                                        try {
+                                            val dir = File(getExternalFilesDir(Environment.DIRECTORY_MOVIES) ?: cacheDir, "AIPhotoVideo")
+                                            val file = PollinationsApi.animateImage(source, caption, apiKey, File(dir, "anna_ai_${System.currentTimeMillis()}.mp4"))
+                                            runOnUiThread { aiBusy = false; status = "AI վիդեոն պատրաստ է՝ ${file.absolutePath}"; Toast.makeText(this@MainActivity, "AI վիդեոն պահպանվեց", Toast.LENGTH_LONG).show() }
+                                        } catch (e: Exception) { runOnUiThread { aiBusy = false; status = "Սխալ՝ ${e.message}" } }
+                                    }
+                                }
+                            }, enabled = !aiBusy, modifier = Modifier.fillMaxWidth().height(54.dp), colors = ButtonDefaults.buttonColors(containerColor = ComposeColor(0xFF7457B8))) { Text(if (aiBusy) "AI-ն աշխատում է…" else "✨ AI-ով կենդանացնել նկարը") }
                             Spacer(Modifier.height(12.dp))
                             OutlinedTextField(value = caption, onValueChange = { caption = it },
                                 label = { Text("Գրիր տեքստ նկարի վրա") }, modifier = Modifier.fillMaxWidth(), minLines = 2)
