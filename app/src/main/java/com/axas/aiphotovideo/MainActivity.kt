@@ -41,8 +41,10 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun PhotoVideoScreen() {
+        var page by remember { mutableStateOf("home") }
         var photoBitmap by remember { mutableStateOf<Bitmap?>(null) }
         var caption by remember { mutableStateOf("") }
+        var prompt by remember { mutableStateOf("") }
         var exporting by remember { mutableStateOf(false) }
         var status by remember { mutableStateOf("Ընտրիր նկար և ավելացրու քո տեքստը") }
 
@@ -66,64 +68,132 @@ class MainActivity : ComponentActivity() {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text("AI PHOTO VIDEO", fontSize = 27.sp, fontWeight = FontWeight.Black, color = ComposeColor.White)
-                    Text("Նկարներ • Տեքստ • Տեսանյութ", color = ComposeColor(0xFFB9B5C9))
-                    Spacer(Modifier.height(22.dp))
-                    Box(
-                        Modifier.fillMaxWidth().height(390.dp)
-                            .background(ComposeColor(0xFF242333), RoundedCornerShape(22.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        val bmp = photoBitmap
-                        if (bmp != null) {
-                            Image(bmp.asImageBitmap(), contentDescription = "Ընտրված նկար", modifier = Modifier.fillMaxSize())
-                            if (caption.isNotBlank()) {
-                                Text(caption, color = ComposeColor.White, fontSize = 25.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.align(Alignment.BottomCenter).padding(18.dp)
-                                        .background(ComposeColor(0x99000000), RoundedCornerShape(10.dp))
-                                        .padding(horizontal = 12.dp, vertical = 8.dp))
-                            }
-                        } else Text("Քո նկարը կհայտնվի այստեղ", color = ComposeColor(0xFFD2CDE2))
-                    }
-                    Spacer(Modifier.height(16.dp))
-                    Button(onClick = { picker.launch("image/*") }, modifier = Modifier.fillMaxWidth()) {
-                        Text("＋  Ընտրել նկար հեռախոսից")
-                    }
-                    Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(value = caption, onValueChange = { caption = it },
-                        label = { Text("Գրիր տեքստ նկարի վրա") }, modifier = Modifier.fillMaxWidth(), minLines = 2)
-                    Spacer(Modifier.height(14.dp))
-                    Button(onClick = {
-                        val source = photoBitmap
-                        if (source == null) {
-                            Toast.makeText(this@MainActivity, "Նախ ընտրիր նկար", Toast.LENGTH_SHORT).show()
-                        } else if (!exporting) {
-                            exporting = true
-                            status = "Պատրաստվում է տեսանյութը…"
-                            thread {
-                                try {
-                                    val file = exportVideo(source, caption)
-                                    runOnUiThread {
-                                        exporting = false
-                                        status = "Պատրաստ է՝ ${file.absolutePath}"
-                                        Toast.makeText(this, "Տեսանյութը պահպանվեց հավելվածի Movies պանակում", Toast.LENGTH_LONG).show()
-                                    }
-                                } catch (e: Exception) {
-                                    runOnUiThread {
-                                        exporting = false
-                                        status = "Սխալ՝ ${e.message ?: "չհաջողվեց ստեղծել տեսանյութը"}"
-                                    }
-                                }
+                    Text("Արհեստական բանականությամբ ստեղծագործիր", color = ComposeColor(0xFFB9B5C9))
+                    Spacer(Modifier.height(28.dp))
+
+                    if (page == "home") {
+                        Spacer(Modifier.height(55.dp))
+                        Box(
+                            Modifier.fillMaxWidth().height(190.dp)
+                                .background(ComposeColor(0xFF242333), RoundedCornerShape(24.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("✨", fontSize = 48.sp)
+                                Text("Քո գաղափարները՝ նկարների և վիդեոների մեջ",
+                                    color = ComposeColor.White, fontWeight = FontWeight.SemiBold)
                             }
                         }
-                    }, enabled = !exporting, modifier = Modifier.fillMaxWidth()) {
-                        Text(if (exporting) "Ստեղծվում է…" else "▶  Ստեղծել 5 վայրկյանանոց MP4")
+                        Spacer(Modifier.height(28.dp))
+                        Button(
+                            onClick = { page = "image" },
+                            modifier = Modifier.fillMaxWidth().height(62.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        ) { Text("🎨  Նկար ստեղծել", fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+                        Spacer(Modifier.height(16.dp))
+                        Button(
+                            onClick = { page = "video" },
+                            modifier = Modifier.fillMaxWidth().height(62.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = ComposeColor(0xFF514477))
+                        ) { Text("🎬  Նկարից վիդեո", fontSize = 18.sp, fontWeight = FontWeight.Bold) }
+                        Spacer(Modifier.height(24.dp))
+                        Text("Ընտրիր գործողությունը", color = ComposeColor(0xFFB9B5C9))
+                    } else {
+                        TextButton(onClick = { page = "home" }, modifier = Modifier.align(Alignment.Start)) {
+                            Text("← Գլխավոր էջ")
+                        }
+                        if (page == "image") {
+                            Spacer(Modifier.height(25.dp))
+                            Text("Նկար ստեղծել", fontSize = 23.sp, fontWeight = FontWeight.Bold, color = ComposeColor.White)
+                            Spacer(Modifier.height(18.dp))
+                            OutlinedTextField(
+                                value = prompt, onValueChange = { prompt = it },
+                                label = { Text("Նկարագրիր՝ ինչ նկար ես ուզում") },
+                                placeholder = { Text("Օրինակ՝ սպորտային մեքենա գիշերային քաղաքում") },
+                                modifier = Modifier.fillMaxWidth(), minLines = 3
+                            )
+                            Spacer(Modifier.height(18.dp))
+                            Box(
+                                Modifier.fillMaxWidth().height(280.dp)
+                                    .background(ComposeColor(0xFF242333), RoundedCornerShape(20.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("Այստեղ կհայտնվի ստեղծված նկարը", color = ComposeColor(0xFFD2CDE2))
+                            }
+                            Spacer(Modifier.height(16.dp))
+                            Button(
+                                onClick = {
+                                    Toast.makeText(this@MainActivity,
+                                        "AI նկարի ստեղծման ծառայությունը դեռ միացված չէ",
+                                        Toast.LENGTH_LONG).show()
+                                },
+                                modifier = Modifier.fillMaxWidth().height(56.dp)
+                            ) { Text("Ստեղծել AI նկար") }
+                            Spacer(Modifier.height(12.dp))
+                            Text("AI նկար ստեղծելու համար դեռ պետք է միացնել արտաքին AI ծառայություն։",
+                                color = ComposeColor(0xFFB9B5C9), fontSize = 13.sp)
+                        } else {
+                            Spacer(Modifier.height(12.dp))
+                            Text("Նկարից վիդեո", fontSize = 23.sp, fontWeight = FontWeight.Bold, color = ComposeColor.White)
+                            Spacer(Modifier.height(16.dp))
+                            Box(
+                                Modifier.fillMaxWidth().height(350.dp)
+                                    .background(ComposeColor(0xFF242333), RoundedCornerShape(22.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                val bmp = photoBitmap
+                                if (bmp != null) {
+                                    Image(bmp.asImageBitmap(), contentDescription = "Ընտրված նկար", modifier = Modifier.fillMaxSize())
+                                    if (caption.isNotBlank()) {
+                                        Text(caption, color = ComposeColor.White, fontSize = 25.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.align(Alignment.BottomCenter).padding(18.dp)
+                                                .background(ComposeColor(0x99000000), RoundedCornerShape(10.dp))
+                                                .padding(horizontal = 12.dp, vertical = 8.dp))
+                                    }
+                                } else Text("Քո նկարը կհայտնվի այստեղ", color = ComposeColor(0xFFD2CDE2))
+                            }
+                            Spacer(Modifier.height(14.dp))
+                            Button(onClick = { picker.launch("image/*") }, modifier = Modifier.fillMaxWidth()) {
+                                Text("＋  Ընտրել նկար հեռախոսից")
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            OutlinedTextField(value = caption, onValueChange = { caption = it },
+                                label = { Text("Գրիր տեքստ նկարի վրա") }, modifier = Modifier.fillMaxWidth(), minLines = 2)
+                            Spacer(Modifier.height(14.dp))
+                            Button(onClick = {
+                                val source = photoBitmap
+                                if (source == null) {
+                                    Toast.makeText(this@MainActivity, "Նախ ընտրիր նկար", Toast.LENGTH_SHORT).show()
+                                } else if (!exporting) {
+                                    exporting = true
+                                    status = "Պատրաստվում է տեսանյութը…"
+                                    thread {
+                                        try {
+                                            val file = exportVideo(source, caption)
+                                            runOnUiThread {
+                                                exporting = false
+                                                status = "Պատրաստ է՝ ${file.absolutePath}"
+                                                Toast.makeText(this, "Տեսանյութը պահպանվեց հավելվածի Movies պանակում", Toast.LENGTH_LONG).show()
+                                            }
+                                        } catch (e: Exception) {
+                                            runOnUiThread {
+                                                exporting = false
+                                                status = "Սխալ՝ ${e.message ?: "չհաջողվեց ստեղծել տեսանյութը"}"
+                                            }
+                                        }
+                                    }
+                                }
+                            }, enabled = !exporting, modifier = Modifier.fillMaxWidth().height(56.dp)) {
+                                Text(if (exporting) "Ստեղծվում է…" else "▶  Ստեղծել 5 վայրկյանանոց MP4")
+                            }
+                            Spacer(Modifier.height(12.dp))
+                            Text(status, color = ComposeColor(0xFFB9B5C9), fontSize = 12.sp)
+                            Text("Սա ստեղծում է ստատիկ նկարով և տեքստով 5 վայրկյանանոց տեսանյութ։ AI շարժապատկերը դեռ միացված չէ։",
+                                color = ComposeColor(0xFF8F8BA1), fontSize = 12.sp)
+                        }
                     }
-                    Spacer(Modifier.height(12.dp))
-                    Text(status, color = ComposeColor(0xFFB9B5C9), fontSize = 12.sp)
-                    Spacer(Modifier.height(20.dp))
-                    Text("AI նկարների գեներացումը և AI անիմացիան կավելացվեն արտաքին AI ծառայություն միացնելուց հետո։",
-                        color = ComposeColor(0xFF8F8BA1), fontSize = 12.sp)
                 }
             }
         }
