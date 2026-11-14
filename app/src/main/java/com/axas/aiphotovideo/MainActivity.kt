@@ -44,7 +44,7 @@ class MainActivity : ComponentActivity() {
         var page by remember { mutableStateOf("home") }
         var photoBitmap by remember { mutableStateOf<Bitmap?>(null) }
         var caption by remember { mutableStateOf("") }
-        var prompt by remember { mutableStateOf("") }
+        var prompt by remember { mutableStateOf("") }\n        var apiKey by remember { mutableStateOf("") }\n        var generatedBitmap by remember { mutableStateOf<Bitmap?>(null) }\n        var aiBusy by remember { mutableStateOf(false) }
         var exporting by remember { mutableStateOf(false) }
         var status by remember { mutableStateOf("Ընտրիր նկար և ավելացրու քո տեքստը") }
 
@@ -119,7 +119,7 @@ class MainActivity : ComponentActivity() {
                                     .background(ComposeColor(0xFF242333), RoundedCornerShape(20.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("Այստեղ կհայտնվի ստեղծված նկարը", color = ComposeColor(0xFFD2CDE2))
+                                if (generatedBitmap != null) Image(generatedBitmap!!.asImageBitmap(), contentDescription = "AI ստեղծած նկար", modifier = Modifier.fillMaxSize()) else Text("Այստեղ կհայտնվի ստեղծված նկարը", color = ComposeColor(0xFFD2CDE2))
                             }
                             Spacer(Modifier.height(16.dp))
                             Button(
